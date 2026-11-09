@@ -1,0 +1,71 @@
+name: conduit
+
+# Shared settings for every container that runs Conduit code (api, migrate,
+# and later the usage worker).
+x-conduit-env: &conduit-env
+  CONDUIT_ENVIRONMENT: ${CONDUIT_ENVIRONMENT:-dev}
+  CONDUIT_LOG_LEVEL: ${CONDUIT_LOG_LEVEL:-INFO}
+  CONDUIT_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-conduit}:${POSTGRES_PASSWORD:-conduit}@postgres:5432/${POSTGRES_DB:-conduit}
+  CONDUIT_REDIS_URL: redis://redis:6379/0
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-conduit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-conduit}
+      POSTGRES_DB: ${POSTGRES_DB:-conduit}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"   # localhost only: never expose the DB publicly
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    # appendonly: Redis will hold the usage stream (Phase 5); persist it so a
+    # Redis restart doesn't lose un-consumed events.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # One-shot job: apply migrations, then exit. The api waits for it to finish
+  # successfully, so the app never runs against an outdated schema, and with
+  # several api replicas only this one container runs migrations.
+  migrate:
+    build: .
+    image: conduit:dev
+    command: ["alembic", "upgrade", "head"]
+    environment: *conduit-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    image: conduit:dev
+    environment: *conduit-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
