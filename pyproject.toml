@@ -13,6 +13,8 @@ dependencies = [
     "asyncpg>=0.30",
     "alembic>=1.14",
     "redis>=5.2",
+    "httpx>=0.28.1",
+    "structlog>=26.1.0",
 ]
 
 [dependency-groups]
@@ -20,12 +22,13 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pytest-cov>=6.0",
-    "httpx>=0.28",
     "asgi-lifespan>=2.1",
     "testcontainers[postgres,redis]>=4.8",
     "ruff>=0.8",
     "mypy>=1.13",
     "pre-commit>=4.0",
+    "respx>=0.23.1",
+    "openai>=3.49.0",
 ]
 
 # The project is an application, not a library we publish: uv installs only
@@ -58,7 +61,7 @@ select = [
 known-third-party = ["alembic"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]  # assert is how pytest works
+"tests/**" = ["S101", "S311"]  # assert is how pytest works; seeded RNGs are fine in tests
 
 # ---------------------------------------------------------------- mypy
 [tool.mypy]

@@ -10,9 +10,22 @@ Requires Docker.
 
 ```bash
 docker compose up -d --build
-curl localhost:8000/readyz
-# {"status":"ready","checks":{"postgres":"ok","redis":"ok"}}
+curl -s localhost:8000/v1/chat/completions -H 'content-type: application/json' \
+  -d '{"model":"mock/demo","messages":[{"role":"user","content":"hello"}]}'
 ```
+
+Any OpenAI SDK works by changing `base_url`:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="unused-until-phase-3")
+r = client.chat.completions.create(
+    model="mock/demo", messages=[{"role": "user", "content": "hello"}]
+)
+```
+
+Models are addressed as `provider/model`. `mock/...` always works; `groq/...` and `openrouter/...` work once their API key is set in `.env` (see [.env.example](.env.example)).
 
 ## Develop
 
@@ -26,4 +39,4 @@ make help       # all commands
 
 ## Stack
 
-Python 3.12 · FastAPI · PostgreSQL 16 · Redis 7 · SQLAlchemy 2 (async) · Alembic · Docker Compose · GitHub Actions
+Python 3.12 · FastAPI · PostgreSQL 16 · Redis 7 · SQLAlchemy 2 (async) · Alembic · httpx · structlog · Docker Compose · GitHub Actions

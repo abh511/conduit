@@ -7,6 +7,12 @@ x-conduit-env: &conduit-env
   CONDUIT_LOG_LEVEL: ${CONDUIT_LOG_LEVEL:-INFO}
   CONDUIT_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-conduit}:${POSTGRES_PASSWORD:-conduit}@postgres:5432/${POSTGRES_DB:-conduit}
   CONDUIT_REDIS_URL: redis://redis:6379/0
+  CONDUIT_LOG_FORMAT: ${CONDUIT_LOG_FORMAT:-json}
+  # Provider keys come from your .env file. Empty = that provider is disabled.
+  CONDUIT_GROQ_API_KEY: ${CONDUIT_GROQ_API_KEY:-}
+  CONDUIT_OPENROUTER_API_KEY: ${CONDUIT_OPENROUTER_API_KEY:-}
+  CONDUIT_MOCK_LATENCY_MS: ${CONDUIT_MOCK_LATENCY_MS:-20}
+  CONDUIT_MOCK_FAILURE_RATE: ${CONDUIT_MOCK_FAILURE_RATE:-0}
 
 services:
   postgres:

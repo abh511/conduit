@@ -9,7 +9,7 @@ install: ## Create .venv with all deps and install git hooks
 	uv run pre-commit install
 
 dev: ## Run the API on the host with auto-reload (needs: docker compose up -d postgres redis)
-	uv run uvicorn app.main:create_app --factory --reload --port 8000
+	CONDUIT_LOG_FORMAT=console uv run uvicorn app.main:create_app --factory --reload --port 8000
 
 up: ## Build and start the full stack (postgres, redis, migrate, api)
 	docker compose up -d --build
